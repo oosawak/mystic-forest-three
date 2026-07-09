@@ -9,6 +9,8 @@
 
 https://miya123123.github.io/mystic-forest-three/
 
+`npm run build` で `docs/` に公開用ファイルを出力します。GitHub Pages のデプロイ先も `docs/` に揃えています。
+
 ## 起動方法
 
 ```sh
