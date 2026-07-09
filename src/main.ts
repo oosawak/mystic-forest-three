@@ -96,8 +96,28 @@ function readMapLane(): number | null {
   return parsed;
 }
 
+type PartyOrderToken = 'player' | CompanionRole;
+
+function readPartyOrder(): PartyOrderToken[] | null {
+  const params = new URLSearchParams(window.location.search);
+  const rawOrder = params.get('partyOrder');
+  if (!rawOrder) return null;
+
+  const tokens = rawOrder.split(',').map((token) => token.trim()).filter(Boolean) as PartyOrderToken[];
+  if (tokens.length !== 4) return null;
+  const expected = new Set<PartyOrderToken>(['player', 'thief', 'swordsman', 'wizard']);
+  if (tokens.some((token) => !expected.has(token))) return null;
+  if (new Set(tokens).size !== 4) return null;
+  return tokens;
+}
+
+function partyOrderToken(member: PartyMember): PartyOrderToken {
+  return member.kind === 'player' ? 'player' : member.role;
+}
+
 const mapEntrySide = readMapEntrySide();
 const mapLane = readMapLane();
+const mapPartyOrder = readPartyOrder();
 
 function initialPlayerSpawn(): { position: THREE.Vector3; facingWorld: THREE.Vector3 } {
   if (isInitialMap) {
@@ -1139,6 +1159,7 @@ function goToNextMap(entrySide?: MapEntrySide, lane?: number): void {
   } else {
     url.searchParams.delete('lane');
   }
+  url.searchParams.set('partyOrder', partyMembers.map((member) => partyOrderToken(member)).join(','));
   window.location.href = url.toString();
 }
 
@@ -1225,6 +1246,18 @@ function createCompanion(role: CompanionRole): CompanionMember {
 
 const companions = companionSpecs.map((spec) => createCompanion(spec.role));
 partyMembers = [player, ...companions];
+if (mapPartyOrder) {
+  const memberByToken = new Map<PartyOrderToken, PartyMember>([
+    ['player', player],
+    ['thief', companions[0]],
+    ['swordsman', companions[1]],
+    ['wizard', companions[2]],
+  ]);
+  const reordered = mapPartyOrder.map((token) => memberByToken.get(token)).filter((member): member is PartyMember => Boolean(member));
+  if (reordered.length === partyMembers.length) {
+    partyMembers = reordered;
+  }
+}
 
 function refreshPartyRenderOrder(): void {
   partyMembers.forEach((member, index) => {
