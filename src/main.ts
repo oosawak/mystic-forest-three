@@ -1079,6 +1079,16 @@ hud.innerHTML = `
 `;
 document.body.appendChild(hud);
 
+const controlsHud = document.createElement('div');
+controlsHud.className = 'controls-hud';
+controlsHud.innerHTML = `
+  <div class="controls-hud__label">Controls</div>
+  <div class="controls-hud__row"><span>WASD / Arrows</span><span>Move</span></div>
+  <div class="controls-hud__row"><span>C</span><span>Switch leader</span></div>
+  <div class="controls-hud__row"><span>Space</span><span>Attack</span></div>
+`;
+document.body.appendChild(controlsHud);
+
 const hudName = hud.querySelector<HTMLElement>('.party-hud__name');
 const hudMeta = hud.querySelector<HTMLElement>('.party-hud__meta');
 const hudNextMapButton = hud.querySelector<HTMLButtonElement>('.party-hud__button');
