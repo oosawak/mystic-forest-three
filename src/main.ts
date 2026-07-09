@@ -1529,32 +1529,40 @@ function makeWindAttackEffect(position: THREE.Vector3, facing: THREE.Vector3, el
   ring2.scale.setScalar(0.8);
   root.add(ring2);
 
-  const gustGeometry = new THREE.CylinderGeometry(0.06, 0.16, 1.0, 7, 1, true);
-  const gustMaterial = new THREE.MeshBasicMaterial({
-    color: 0xffffff,
+  const swirlGeometry = new THREE.BufferGeometry();
+  const swirlPositions = new Float32Array([
+    0.42, 0.08, 0,
+    0.18, 0.16, 0.28,
+    -0.16, 0.22, 0.2,
+    -0.34, 0.28, -0.08,
+    -0.06, 0.34, -0.34,
+    0.28, 0.42, -0.18,
+  ]);
+  swirlGeometry.setAttribute('position', new THREE.BufferAttribute(swirlPositions, 3));
+  const swirlMaterial = new THREE.PointsMaterial({
+    color: 0xf2feff,
+    size: 0.06,
     transparent: true,
-    opacity: 0.65,
+    opacity: 0.9,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
-    side: THREE.DoubleSide,
   });
-  const gust = new THREE.Mesh(gustGeometry, gustMaterial);
-  gust.position.y = 0.5;
-  root.add(gust);
+  const swirl = new THREE.Points(swirlGeometry, swirlMaterial);
+  root.add(swirl);
 
   const streakGeometry = new THREE.BufferGeometry();
   const streakPositions = new Float32Array([
-    -0.12, 0.08, 0,
-    0.16, 0.1, 0.02,
-    -0.06, 0.24, -0.04,
-    0.08, 0.36, 0.03,
-    -0.03, 0.5, -0.02,
-    0.05, 0.66, 0.01,
+    -0.14, 0.05, 0,
+    0.1, 0.14, 0.1,
+    0.02, 0.24, -0.12,
+    -0.12, 0.34, 0.14,
+    0.14, 0.46, -0.05,
+    -0.02, 0.58, 0.02,
   ]);
   streakGeometry.setAttribute('position', new THREE.BufferAttribute(streakPositions, 3));
   const streakMaterial = new THREE.PointsMaterial({
     color: 0xeefbff,
-    size: 0.05,
+    size: 0.045,
     transparent: true,
     opacity: 0.88,
     blending: THREE.AdditiveBlending,
@@ -1563,6 +1571,18 @@ function makeWindAttackEffect(position: THREE.Vector3, facing: THREE.Vector3, el
   const streaks = new THREE.Points(streakGeometry, streakMaterial);
   root.add(streaks);
 
+  const coreGeometry = new THREE.SphereGeometry(0.08, 10, 8);
+  const coreMaterial = new THREE.MeshBasicMaterial({
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.95,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  const core = new THREE.Mesh(coreGeometry, coreMaterial);
+  core.position.y = 0.1;
+  root.add(core);
+
   attackEffectGroup.add(root);
 
   return {
@@ -1570,34 +1590,40 @@ function makeWindAttackEffect(position: THREE.Vector3, facing: THREE.Vector3, el
     startTime: elapsed,
     duration: 0.48,
     hitSlimes: new Set<SlimeEnemy>(),
-    damageRadius: 1.0,
+    damageRadius: 1.15,
     damage: 1,
     update: (progress: number) => {
       const swell = Math.min(progress / 0.2, 1);
       const fade = progress > 0.55 ? (1 - progress) / 0.45 : 1;
-      root.scale.setScalar(0.9 + swell * 1.25);
+      root.scale.setScalar(0.92 + swell * 1.35);
       ring.rotation.z = progress * Math.PI * 2.2;
-      ring.scale.setScalar(0.9 + swell * 1.4);
+      ring.scale.setScalar(0.85 + swell * 1.65);
       ringMaterial.opacity = 0.9 * Math.max(fade, 0);
       ring2.rotation.z = -progress * Math.PI * 1.7;
-      ring2.scale.setScalar(0.7 + swell * 1.1);
+      ring2.scale.setScalar(0.68 + swell * 1.35);
       ring2Material.opacity = 0.72 * Math.max(fade, 0);
-      gust.scale.set(1 + swell * 0.3, 1 + swell * 0.55, 1 + swell * 0.3);
-      gust.position.y = 0.5 + swell * 0.12;
-      gustMaterial.opacity = 0.65 * Math.max(fade, 0);
-      streaks.position.y = 0.02 + swell * 0.18;
-      streaks.scale.setScalar(0.8 + swell * 0.9);
+      swirl.rotation.y = progress * Math.PI * 5.2;
+      swirl.rotation.z = progress * Math.PI * 2.4;
+      swirl.scale.setScalar(0.84 + swell * 1.25);
+      swirlMaterial.opacity = 0.95 * Math.max(fade, 0);
+      streaks.rotation.y = -progress * Math.PI * 4.5;
+      streaks.rotation.z = progress * Math.PI * 3.4;
+      streaks.scale.setScalar(0.78 + swell * 1.05);
       streakMaterial.opacity = 0.88 * Math.max(fade, 0);
+      core.scale.setScalar(0.9 + swell * 1.6);
+      coreMaterial.opacity = 0.95 * Math.max(fade, 0);
     },
     dispose: () => {
       ringGeometry.dispose();
       ringMaterial.dispose();
       ring2Geometry.dispose();
       ring2Material.dispose();
-      gustGeometry.dispose();
-      gustMaterial.dispose();
+      swirlGeometry.dispose();
+      swirlMaterial.dispose();
       streakGeometry.dispose();
       streakMaterial.dispose();
+      coreGeometry.dispose();
+      coreMaterial.dispose();
     },
   };
 }
@@ -1608,9 +1634,9 @@ function makeMagicAttackEffect(position: THREE.Vector3, facing: THREE.Vector3, e
   root.position.set(position.x, groundY + 0.04, position.z);
   root.rotation.y = Math.atan2(facing.x, facing.z);
 
-  const columnGeometry = new THREE.CylinderGeometry(0.08, 0.14, 1.2, 6, 1, true);
+  const columnGeometry = new THREE.CylinderGeometry(0.18, 0.36, 0.92, 7, 1, true);
   const columnMaterial = new THREE.MeshBasicMaterial({
-    color: 0xd6a25a,
+    color: 0xb38a53,
     transparent: true,
     opacity: 0.9,
     blending: THREE.NormalBlending,
@@ -1618,20 +1644,76 @@ function makeMagicAttackEffect(position: THREE.Vector3, facing: THREE.Vector3, e
     side: THREE.DoubleSide,
   });
   const column = new THREE.Mesh(columnGeometry, columnMaterial);
-  column.position.set(0, 0.58, 0.46);
+  column.position.set(0, 0.34, 0.44);
   root.add(column);
+
+  const column2Geometry = new THREE.CylinderGeometry(0.08, 0.24, 1.05, 6, 1, true);
+  const column2Material = new THREE.MeshBasicMaterial({
+    color: 0x8e6238,
+    transparent: true,
+    opacity: 0.82,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  });
+  const column2 = new THREE.Mesh(column2Geometry, column2Material);
+  column2.position.set(0, 0.38, 0.54);
+  column2.rotation.z = Math.PI * 0.08;
+  root.add(column2);
+
+  const burstGeometry = new THREE.BufferGeometry();
+  const burstPositions = new Float32Array([
+    0.0, 0.05, 0.18,
+    0.18, 0.12, 0.06,
+    0.1, 0.24, -0.14,
+    -0.1, 0.18, -0.08,
+    -0.2, 0.08, 0.12,
+    0.02, 0.34, 0.24,
+    0.24, 0.26, 0.18,
+    -0.18, 0.3, -0.18,
+  ]);
+  burstGeometry.setAttribute('position', new THREE.BufferAttribute(burstPositions, 3));
+  const burstMaterial = new THREE.PointsMaterial({
+    color: 0xe4c18e,
+    size: 0.085,
+    transparent: true,
+    opacity: 0.95,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  const burst = new THREE.Points(burstGeometry, burstMaterial);
+  root.add(burst);
+
+  const shardGeometry = new THREE.OctahedronGeometry(0.11, 0);
+  const shardMaterial = new THREE.MeshBasicMaterial({
+    color: 0xa56d35,
+    transparent: true,
+    opacity: 0.9,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+  });
+  const shards: Array<{ mesh: THREE.Mesh; angle: number; speed: number; lift: number }> = [];
+  for (let i = 0; i < 6; i += 1) {
+    const shard = new THREE.Mesh(shardGeometry, shardMaterial);
+    const angle = (i / 6) * Math.PI * 2;
+    shard.position.set(Math.cos(angle) * 0.16, 0.18, Math.sin(angle) * 0.16 + 0.08);
+    shard.scale.setScalar(0.72 + (i % 3) * 0.08);
+    root.add(shard);
+    shards.push({ mesh: shard, angle, speed: 0.65 + i * 0.08, lift: 0.18 + (i % 2) * 0.08 });
+  }
 
   const emberGeometry = new THREE.BufferGeometry();
   const emberPositions = new Float32Array([
-    0.02, 0.1, 0.38,
-    -0.03, 0.24, 0.44,
-    0.04, 0.42, 0.5,
-    -0.02, 0.6, 0.56,
+    0.02, 0.08, 0.36,
+    -0.06, 0.18, 0.42,
+    0.08, 0.3, 0.48,
+    -0.02, 0.46, 0.56,
+    0.06, 0.56, 0.62,
   ]);
   emberGeometry.setAttribute('position', new THREE.BufferAttribute(emberPositions, 3));
   const emberMaterial = new THREE.PointsMaterial({
     color: 0xffd48a,
-    size: 0.05,
+    size: 0.065,
     transparent: true,
     opacity: 0.9,
     blending: THREE.NormalBlending,
@@ -1647,25 +1729,51 @@ function makeMagicAttackEffect(position: THREE.Vector3, facing: THREE.Vector3, e
     startTime: elapsed,
     duration: 0.56,
     hitSlimes: new Set<SlimeEnemy>(),
-    damageRadius: 0.95,
-    damage: 1,
+    damageRadius: 1.3,
+    damage: 2,
     update: (progress: number) => {
       const fall = progress > 0.55 ? (1 - progress) / 0.45 : 1;
       const forwardPush = progress * 0.5;
-      const shrink = Math.max(1 - progress * 0.78, 0.22);
-      root.position.y = groundY + 0.04 + Math.sin(progress * Math.PI) * 0.03;
-      column.position.z = 0.46 + forwardPush;
-      column.position.y = 0.58 * shrink;
-      column.scale.set(1 + progress * 0.06, shrink, 1 + progress * 0.06);
+      const shake = Math.sin(progress * Math.PI * 2.4) * 0.03;
+      const columnScale = Math.max(1 - progress * 0.42, 0.42);
+      root.position.y = groundY + 0.04 + Math.sin(progress * Math.PI) * 0.05;
+      column.position.z = 0.44 + forwardPush * 0.9;
+      column.position.y = 0.34 + shake;
+      column.scale.set(1.15 + progress * 0.2, columnScale * 1.25, 1.15 + progress * 0.12);
+      column.rotation.y = progress * Math.PI * 1.15;
+      column.rotation.x = Math.sin(progress * Math.PI * 1.7) * 0.1;
       column.material.opacity = 0.9 * Math.max(fall, 0);
-      embers.position.z = 0.42 + forwardPush;
-      embers.position.y = 0.62 * shrink;
-      embers.scale.setScalar(0.78 + (1 - shrink) * 0.7);
-      emberMaterial.opacity = 0.9 * Math.max(fall, 0);
+      column2.position.z = 0.54 + forwardPush * 1.02;
+      column2.position.y = 0.38 + shake * 0.8;
+      column2.scale.set(0.92 + progress * 0.18, Math.max(1 - progress * 0.24, 0.4), 0.92 + progress * 0.18);
+      column2.rotation.y = -progress * Math.PI * 1.4;
+      column2.rotation.x = Math.sin(progress * Math.PI * 1.5) * -0.08;
+      column2.material.opacity = 0.82 * Math.max(fall, 0);
+      burst.position.z = 0.4 + forwardPush * 0.84;
+      burst.position.y = 0.12 + shake * 0.6;
+      burst.scale.setScalar(0.88 + progress * 1.6);
+      burstMaterial.opacity = 0.95 * Math.max(fall, 0);
+      shards.forEach(({ mesh, angle, speed, lift }, index) => {
+        const out = progress * (1.15 + index * 0.08);
+        mesh.position.set(Math.cos(angle) * (0.16 + out * 1.5), 0.18 + out * lift, Math.sin(angle) * (0.16 + out * 1.35) + 0.08);
+        mesh.rotation.set(progress * speed * Math.PI * 2.5, progress * (speed + 0.3) * Math.PI * 1.7, angle + progress * Math.PI);
+        mesh.scale.setScalar((0.72 + (index % 3) * 0.08) * (1 + progress * 0.55));
+        (mesh.material as THREE.MeshBasicMaterial).opacity = 0.9 * Math.max(fall, 0);
+      });
+      embers.position.z = 0.42 + forwardPush * 0.86;
+      embers.position.y = 0.6 + Math.sin(progress * Math.PI * 2.0) * 0.03;
+      embers.scale.setScalar(0.88 + (1 - Math.max(1 - progress * 0.78, 0.22)) * 0.8);
+      emberMaterial.opacity = 0.92 * Math.max(fall, 0);
     },
     dispose: () => {
       columnGeometry.dispose();
       columnMaterial.dispose();
+      column2Geometry.dispose();
+      column2Material.dispose();
+      burstGeometry.dispose();
+      burstMaterial.dispose();
+      shardGeometry.dispose();
+      shardMaterial.dispose();
       column.material.dispose();
       emberGeometry.dispose();
       emberMaterial.dispose();
