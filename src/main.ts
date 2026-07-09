@@ -1595,22 +1595,22 @@ function makeWindAttackEffect(position: THREE.Vector3, facing: THREE.Vector3, el
     update: (progress: number) => {
       const swell = Math.min(progress / 0.2, 1);
       const fade = progress > 0.55 ? (1 - progress) / 0.45 : 1;
-      root.scale.setScalar(0.92 + swell * 1.35);
-      ring.rotation.z = progress * Math.PI * 2.2;
-      ring.scale.setScalar(0.85 + swell * 1.65);
+      root.scale.setScalar(0.96 + swell * 1.48);
+      ring.rotation.z = progress * Math.PI * 3.4;
+      ring.scale.setScalar(0.92 + swell * 1.9);
       ringMaterial.opacity = 0.9 * Math.max(fade, 0);
-      ring2.rotation.z = -progress * Math.PI * 1.7;
-      ring2.scale.setScalar(0.68 + swell * 1.35);
+      ring2.rotation.z = -progress * Math.PI * 2.5;
+      ring2.scale.setScalar(0.74 + swell * 1.55);
       ring2Material.opacity = 0.72 * Math.max(fade, 0);
-      swirl.rotation.y = progress * Math.PI * 5.2;
-      swirl.rotation.z = progress * Math.PI * 2.4;
-      swirl.scale.setScalar(0.84 + swell * 1.25);
+      swirl.rotation.y = progress * Math.PI * 7.2;
+      swirl.rotation.z = progress * Math.PI * 4.1;
+      swirl.scale.setScalar(0.88 + swell * 1.55);
       swirlMaterial.opacity = 0.95 * Math.max(fade, 0);
-      streaks.rotation.y = -progress * Math.PI * 4.5;
-      streaks.rotation.z = progress * Math.PI * 3.4;
-      streaks.scale.setScalar(0.78 + swell * 1.05);
+      streaks.rotation.y = -progress * Math.PI * 6.0;
+      streaks.rotation.z = progress * Math.PI * 5.1;
+      streaks.scale.setScalar(0.84 + swell * 1.25);
       streakMaterial.opacity = 0.88 * Math.max(fade, 0);
-      core.scale.setScalar(0.9 + swell * 1.6);
+      core.scale.setScalar(1.0 + swell * 1.9);
       coreMaterial.opacity = 0.95 * Math.max(fade, 0);
     },
     dispose: () => {
@@ -1636,7 +1636,7 @@ function makeMagicAttackEffect(position: THREE.Vector3, facing: THREE.Vector3, e
 
   const columnGeometry = new THREE.CylinderGeometry(0.18, 0.36, 0.92, 7, 1, true);
   const columnMaterial = new THREE.MeshBasicMaterial({
-    color: 0xb38a53,
+    color: 0x8f5f2f,
     transparent: true,
     opacity: 0.9,
     blending: THREE.NormalBlending,
@@ -1649,7 +1649,7 @@ function makeMagicAttackEffect(position: THREE.Vector3, facing: THREE.Vector3, e
 
   const column2Geometry = new THREE.CylinderGeometry(0.08, 0.24, 1.05, 6, 1, true);
   const column2Material = new THREE.MeshBasicMaterial({
-    color: 0x8e6238,
+    color: 0x6f4622,
     transparent: true,
     opacity: 0.82,
     blending: THREE.AdditiveBlending,
@@ -1674,8 +1674,8 @@ function makeMagicAttackEffect(position: THREE.Vector3, facing: THREE.Vector3, e
   ]);
   burstGeometry.setAttribute('position', new THREE.BufferAttribute(burstPositions, 3));
   const burstMaterial = new THREE.PointsMaterial({
-    color: 0xe4c18e,
-    size: 0.085,
+    color: 0xc98d4d,
+    size: 0.1,
     transparent: true,
     opacity: 0.95,
     blending: THREE.AdditiveBlending,
@@ -1686,7 +1686,7 @@ function makeMagicAttackEffect(position: THREE.Vector3, facing: THREE.Vector3, e
 
   const shardGeometry = new THREE.OctahedronGeometry(0.11, 0);
   const shardMaterial = new THREE.MeshBasicMaterial({
-    color: 0xa56d35,
+    color: 0x5b3416,
     transparent: true,
     opacity: 0.9,
     blending: THREE.AdditiveBlending,
@@ -1712,8 +1712,8 @@ function makeMagicAttackEffect(position: THREE.Vector3, facing: THREE.Vector3, e
   ]);
   emberGeometry.setAttribute('position', new THREE.BufferAttribute(emberPositions, 3));
   const emberMaterial = new THREE.PointsMaterial({
-    color: 0xffd48a,
-    size: 0.065,
+    color: 0xffc06a,
+    size: 0.08,
     transparent: true,
     opacity: 0.9,
     blending: THREE.NormalBlending,
@@ -1729,40 +1729,41 @@ function makeMagicAttackEffect(position: THREE.Vector3, facing: THREE.Vector3, e
     startTime: elapsed,
     duration: 0.56,
     hitSlimes: new Set<SlimeEnemy>(),
-    damageRadius: 1.3,
+    damageRadius: 1.65,
     damage: 2,
     update: (progress: number) => {
       const fall = progress > 0.55 ? (1 - progress) / 0.45 : 1;
       const forwardPush = progress * 0.5;
-      const shake = Math.sin(progress * Math.PI * 2.4) * 0.03;
-      const columnScale = Math.max(1 - progress * 0.42, 0.42);
-      root.position.y = groundY + 0.04 + Math.sin(progress * Math.PI) * 0.05;
-      column.position.z = 0.44 + forwardPush * 0.9;
+      const shake = Math.sin(progress * Math.PI * 3.2) * 0.05;
+      const columnScale = Math.max(1 - progress * 0.34, 0.34);
+      root.position.y = groundY + 0.03 + Math.sin(progress * Math.PI) * 0.08;
+      root.rotation.y = Math.atan2(facing.x, facing.z) + progress * Math.PI * 0.06;
+      column.position.z = 0.44 + forwardPush * 1.0;
       column.position.y = 0.34 + shake;
-      column.scale.set(1.15 + progress * 0.2, columnScale * 1.25, 1.15 + progress * 0.12);
-      column.rotation.y = progress * Math.PI * 1.15;
-      column.rotation.x = Math.sin(progress * Math.PI * 1.7) * 0.1;
+      column.scale.set(1.25 + progress * 0.28, columnScale * 1.45, 1.25 + progress * 0.2);
+      column.rotation.y = progress * Math.PI * 1.7;
+      column.rotation.x = Math.sin(progress * Math.PI * 2.0) * 0.12;
       column.material.opacity = 0.9 * Math.max(fall, 0);
-      column2.position.z = 0.54 + forwardPush * 1.02;
-      column2.position.y = 0.38 + shake * 0.8;
-      column2.scale.set(0.92 + progress * 0.18, Math.max(1 - progress * 0.24, 0.4), 0.92 + progress * 0.18);
-      column2.rotation.y = -progress * Math.PI * 1.4;
-      column2.rotation.x = Math.sin(progress * Math.PI * 1.5) * -0.08;
+      column2.position.z = 0.54 + forwardPush * 1.12;
+      column2.position.y = 0.38 + shake * 1.2;
+      column2.scale.set(1.0 + progress * 0.3, Math.max(1 - progress * 0.22, 0.28), 1.0 + progress * 0.3);
+      column2.rotation.y = -progress * Math.PI * 2.0;
+      column2.rotation.x = Math.sin(progress * Math.PI * 1.8) * -0.14;
       column2.material.opacity = 0.82 * Math.max(fall, 0);
-      burst.position.z = 0.4 + forwardPush * 0.84;
-      burst.position.y = 0.12 + shake * 0.6;
-      burst.scale.setScalar(0.88 + progress * 1.6);
+      burst.position.z = 0.38 + forwardPush * 1.08;
+      burst.position.y = 0.12 + shake * 1.1;
+      burst.scale.setScalar(1.08 + progress * 2.25);
       burstMaterial.opacity = 0.95 * Math.max(fall, 0);
       shards.forEach(({ mesh, angle, speed, lift }, index) => {
-        const out = progress * (1.15 + index * 0.08);
-        mesh.position.set(Math.cos(angle) * (0.16 + out * 1.5), 0.18 + out * lift, Math.sin(angle) * (0.16 + out * 1.35) + 0.08);
-        mesh.rotation.set(progress * speed * Math.PI * 2.5, progress * (speed + 0.3) * Math.PI * 1.7, angle + progress * Math.PI);
-        mesh.scale.setScalar((0.72 + (index % 3) * 0.08) * (1 + progress * 0.55));
+        const out = progress * (1.55 + index * 0.1);
+        mesh.position.set(Math.cos(angle) * (0.16 + out * 2.6), 0.18 + out * (lift + 0.18), Math.sin(angle) * (0.16 + out * 2.35) + 0.08);
+        mesh.rotation.set(progress * speed * Math.PI * 3.6, progress * (speed + 0.3) * Math.PI * 2.6, angle + progress * Math.PI * 1.4);
+        mesh.scale.setScalar((0.72 + (index % 3) * 0.08) * (1 + progress * 0.9));
         (mesh.material as THREE.MeshBasicMaterial).opacity = 0.9 * Math.max(fall, 0);
       });
-      embers.position.z = 0.42 + forwardPush * 0.86;
-      embers.position.y = 0.6 + Math.sin(progress * Math.PI * 2.0) * 0.03;
-      embers.scale.setScalar(0.88 + (1 - Math.max(1 - progress * 0.78, 0.22)) * 0.8);
+      embers.position.z = 0.42 + forwardPush * 1.0;
+      embers.position.y = 0.62 + Math.sin(progress * Math.PI * 2.4) * 0.05;
+      embers.scale.setScalar(1.0 + (1 - Math.max(1 - progress * 0.78, 0.22)) * 1.1);
       emberMaterial.opacity = 0.92 * Math.max(fall, 0);
     },
     dispose: () => {
