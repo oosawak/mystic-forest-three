@@ -5,6 +5,7 @@ body {
   margin: 0;
   overflow: hidden;
   background: #071326;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
 }
 
 #scene {
@@ -12,4 +13,78 @@ body {
   width: 100vw;
   height: 100vh;
   touch-action: none;
+}
+
+.party-hud {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 10;
+  min-width: 220px;
+  max-width: 280px;
+  padding: 14px 16px 12px;
+  border: 1px solid rgba(145, 230, 255, 0.32);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(8, 29, 54, 0.88), rgba(5, 14, 28, 0.9)),
+    radial-gradient(circle at top right, rgba(91, 238, 255, 0.2), transparent 42%);
+  color: #e6fbff;
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+}
+
+.party-hud__label {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(174, 244, 255, 0.72);
+  margin-bottom: 6px;
+}
+
+.party-hud__name {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 8px;
+}
+
+.party-hud__meta {
+  font-size: 12px;
+  line-height: 1.5;
+  color: rgba(232, 248, 255, 0.86);
+}
+
+.party-hud__hint {
+  margin-top: 10px;
+  font-size: 11px;
+  color: rgba(174, 244, 255, 0.66);
+}
+
+.party-hud__button {
+  margin-top: 12px;
+  width: 100%;
+  border: 1px solid rgba(145, 230, 255, 0.28);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: linear-gradient(180deg, rgba(28, 86, 119, 0.95), rgba(12, 34, 60, 0.95));
+  color: #e9fdff;
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+
+.party-hud__button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(176, 245, 255, 0.5);
+  background: linear-gradient(180deg, rgba(35, 103, 142, 0.98), rgba(16, 46, 78, 0.98));
+}
+
+.party-hud__button:active {
+  transform: translateY(0);
 }
