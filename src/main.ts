@@ -392,9 +392,10 @@ const propGroup = new THREE.Group();
 const glowGroup = new THREE.Group();
 const attackEffectGroup = new THREE.Group();
 const enemyGroup = new THREE.Group();
+const damagePopupGroup = new THREE.Group();
 const companionGroup = new THREE.Group();
 const playerGroup = new THREE.Group();
-scene.add(terrainGroup, propGroup, glowGroup, attackEffectGroup, enemyGroup, companionGroup, playerGroup);
+scene.add(terrainGroup, propGroup, glowGroup, attackEffectGroup, enemyGroup, damagePopupGroup, companionGroup, playerGroup);
 
 const hemiLight = new THREE.HemisphereLight(0xb7f5ff, 0x213412, 3.2);
 scene.add(hemiLight);
@@ -606,9 +607,101 @@ type SlimeEnemy = {
   moveSpeed: number;
   homeX: number;
   homeZ: number;
+  hp: number;
+  maxHp: number;
+  hitFlashUntil: number;
+};
+
+type DamagePopup = {
+  root: THREE.Sprite;
+  material: THREE.SpriteMaterial;
+  texture: THREE.CanvasTexture;
+  basePosition: THREE.Vector3;
+  velocity: THREE.Vector3;
+  startTime: number;
+  duration: number;
 };
 
 const slimeEnemies: SlimeEnemy[] = [];
+const damagePopups: DamagePopup[] = [];
+
+function makeDamageTexture(text: string): { texture: THREE.CanvasTexture; material: THREE.SpriteMaterial } {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 128;
+  const context = canvas.getContext('2d');
+  if (!context) {
+    const texture = new THREE.CanvasTexture(canvas);
+    const material = new THREE.SpriteMaterial({
+      color: 0xffffff,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+    return { texture, material };
+  }
+
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.font = 'bold 72px Trebuchet MS, sans-serif';
+  context.textAlign = 'center';
+  context.textBaseline = 'middle';
+  context.lineWidth = 12;
+  context.strokeStyle = 'rgba(70, 8, 8, 0.95)';
+  context.fillStyle = '#ff5c5c';
+  context.strokeText(text, canvas.width / 2, canvas.height / 2);
+  context.fillText(text, canvas.width / 2, canvas.height / 2);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.needsUpdate = true;
+  const material = new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+  });
+  return { texture, material };
+}
+
+function spawnDamagePopup(position: THREE.Vector3, amount: number, elapsed: number): void {
+  const basePosition = position.clone();
+  basePosition.y += 1.22;
+  const { texture, material } = makeDamageTexture(`-${amount}`);
+  const root = new THREE.Sprite(material);
+  root.position.copy(basePosition);
+  root.scale.set(0.92, 0.46, 1);
+  damagePopupGroup.add(root);
+  damagePopups.push({
+    root,
+    material,
+    texture,
+    basePosition,
+    velocity: new THREE.Vector3((pseudoRandom(elapsed * 17.1 + amount) - 0.5) * 0.18, 0.55, 0),
+    startTime: elapsed,
+    duration: 0.72,
+  });
+}
+
+function removeDamagePopup(index: number): void {
+  const popup = damagePopups[index];
+  damagePopupGroup.remove(popup.root);
+  popup.material.map = null;
+  popup.material.dispose();
+  popup.texture.dispose();
+  damagePopups.splice(index, 1);
+}
+
+function removeSlime(index: number): void {
+  const slime = slimeEnemies[index];
+  slimeGroupCleanup(slime.root);
+  slimeEnemies.splice(index, 1);
+}
+
+function clearDamagePopups(): void {
+  for (let i = damagePopups.length - 1; i >= 0; i -= 1) {
+    removeDamagePopup(i);
+  }
+}
 
 function addSlime(x: number, z: number, seed: number): void {
   const root = new THREE.Group();
@@ -669,6 +762,9 @@ function addSlime(x: number, z: number, seed: number): void {
     moveSpeed: 0.45 + pseudoRandom(seed + 3.4) * 0.35,
     homeX: x,
     homeZ: z,
+    hp: 2,
+    maxHp: 2,
+    hitFlashUntil: 0,
   });
 }
 
@@ -677,6 +773,7 @@ function clearSlimes(): void {
     slimeGroupCleanup(slime.root);
   }
   slimeEnemies.length = 0;
+  clearDamagePopups();
 }
 
 function slimeGroupCleanup(root: THREE.Object3D): void {
@@ -743,10 +840,29 @@ function updateSlimes(delta: number, elapsed: number): void {
       slime.root.rotation.y = Math.atan2(dx, dz);
     }
     const squash = 1 + Math.sin(elapsed * 8 + slime.roamPhase) * 0.07;
-    slime.body.scale.set(1.18 + squash * 0.05, 0.82 - Math.sin(elapsed * 10 + slime.seed) * 0.03, 1.18 + squash * 0.05);
     slime.face.position.y = 0.06 + Math.sin(elapsed * 9 + slime.seed) * 0.015;
     slime.face.rotation.y = Math.sin(elapsed * 2.2 + slime.roamPhase) * 0.14;
     slime.face.rotation.x = Math.sin(elapsed * 3.1 + slime.seed) * 0.08;
+    if (slime.hitFlashUntil > elapsed) {
+      const flash = Math.max((slime.hitFlashUntil - elapsed) * 6, 0);
+      const bodyMaterial = slime.body.material as THREE.MeshStandardMaterial;
+      bodyMaterial.emissiveIntensity = 0.25 + flash * 1.5;
+      bodyMaterial.color.setHex(0xa4ffb1);
+      slime.body.scale.set(
+        (1.18 + squash * 0.05) * (1.03 + flash * 0.02),
+        (0.82 - Math.sin(elapsed * 10 + slime.seed) * 0.03) * (1.03 + flash * 0.02),
+        (1.18 + squash * 0.05) * (1.03 + flash * 0.02),
+      );
+    } else {
+      const bodyMaterial = slime.body.material as THREE.MeshStandardMaterial;
+      bodyMaterial.emissiveIntensity = 0.25;
+      bodyMaterial.color.setHex(0x68e87f);
+      slime.body.scale.set(
+        1.18 + squash * 0.05,
+        0.82 - Math.sin(elapsed * 10 + slime.seed) * 0.03,
+        1.18 + squash * 0.05,
+      );
+    }
   }
 }
 
@@ -1189,6 +1305,9 @@ type AttackEffect = {
   duration: number;
   update: (progress: number) => void;
   dispose: () => void;
+  hitSlimes: Set<SlimeEnemy>;
+  damageRadius: number;
+  damage: number;
 };
 
 const attackEffects: AttackEffect[] = [];
@@ -1288,6 +1407,9 @@ function makeSlashAttackEffect(position: THREE.Vector3, facing: THREE.Vector3, e
     root,
     startTime: elapsed,
     duration: isHeavy ? 0.44 : 0.32,
+    hitSlimes: new Set<SlimeEnemy>(),
+    damageRadius: isHeavy ? 1.0 : 0.8,
+    damage: isHeavy ? 2 : 1,
     update: (progress: number) => {
       const pulse = progress < 0.5 ? progress / 0.5 : (1 - progress) / 0.5;
       root.scale.setScalar(((isHeavy ? 0.98 : 0.88) + progress * (isHeavy ? 2.0 : 2.4)) * effectScale);
@@ -1404,6 +1526,9 @@ function makeWindAttackEffect(position: THREE.Vector3, facing: THREE.Vector3, el
     root,
     startTime: elapsed,
     duration: 0.48,
+    hitSlimes: new Set<SlimeEnemy>(),
+    damageRadius: 1.0,
+    damage: 1,
     update: (progress: number) => {
       const swell = Math.min(progress / 0.2, 1);
       const fade = progress > 0.55 ? (1 - progress) / 0.45 : 1;
@@ -1478,6 +1603,9 @@ function makeMagicAttackEffect(position: THREE.Vector3, facing: THREE.Vector3, e
     root,
     startTime: elapsed,
     duration: 0.56,
+    hitSlimes: new Set<SlimeEnemy>(),
+    damageRadius: 0.95,
+    damage: 1,
     update: (progress: number) => {
       const fall = progress > 0.55 ? (1 - progress) / 0.45 : 1;
       const forwardPush = progress * 0.5;
@@ -1561,6 +1689,9 @@ function makeArrowAttackEffect(position: THREE.Vector3, facing: THREE.Vector3, e
     root,
     startTime: elapsed,
     duration: 0.72,
+    hitSlimes: new Set<SlimeEnemy>(),
+    damageRadius: 0.45,
+    damage: 1,
     update: (progress: number) => {
       const distance = progress * 5.6;
       const lift = Math.sin(progress * Math.PI) * 0.4;
@@ -1632,6 +1763,9 @@ function makeFirewallAttackEffect(position: THREE.Vector3, facing: THREE.Vector3
     root,
     startTime: elapsed,
     duration: 0.88,
+    hitSlimes: new Set<SlimeEnemy>(),
+    damageRadius: 1.15,
+    damage: 1,
     update: (progress: number) => {
       const rise = Math.min(progress / 0.22, 1);
       const fade = progress > 0.7 ? (1 - progress) / 0.3 : 1;
@@ -1690,6 +1824,41 @@ function updateAttackEffects(elapsed: number): void {
     }
 
     effect.update(progress);
+    const effectCenter = effect.root.position;
+    for (let j = slimeEnemies.length - 1; j >= 0; j -= 1) {
+      const slime = slimeEnemies[j];
+      if (effect.hitSlimes.has(slime)) continue;
+      const slimeCenterY = slime.root.position.y + 0.55;
+      const dx = slime.root.position.x - effectCenter.x;
+      const dz = slime.root.position.z - effectCenter.z;
+      const dy = slimeCenterY - effectCenter.y;
+      const distance = Math.hypot(dx, dz, dy * 0.6);
+      if (distance > effect.damageRadius) continue;
+
+      effect.hitSlimes.add(slime);
+      slime.hp -= effect.damage;
+      slime.hitFlashUntil = elapsed + 0.16;
+      spawnDamagePopup(slime.root.position.clone(), effect.damage, elapsed);
+      if (slime.hp <= 0) {
+        removeSlime(j);
+      }
+    }
+  }
+}
+
+function updateDamagePopups(elapsed: number): void {
+  for (let i = damagePopups.length - 1; i >= 0; i -= 1) {
+    const popup = damagePopups[i];
+    const progress = (elapsed - popup.startTime) / popup.duration;
+    if (progress >= 1) {
+      removeDamagePopup(i);
+      continue;
+    }
+
+    popup.root.position.copy(popup.basePosition).addScaledVector(popup.velocity, progress * popup.duration);
+    popup.root.position.y += progress * 0.7;
+    popup.root.scale.setScalar(0.92 + Math.sin(progress * Math.PI) * 0.14);
+    popup.material.opacity = 1 - progress;
   }
 }
 
@@ -1951,6 +2120,7 @@ function animate(): void {
 
   glowGroup.rotation.y = elapsed * 0.015;
   updateAttackEffects(elapsed);
+  updateDamagePopups(elapsed);
   updateParty(delta, elapsed);
   updateSlimes(delta, elapsed);
   controls.update();
